@@ -1,0 +1,32 @@
+ What it does, by requirement
+
+  1. Downloading and parsing. It downloads daily price CSVs over HTTP from five websites: EODHD, Twelve Data, Tiingo, Alpha Vantage and
+     Stooq. If one fails, it moves to the next, and it rejects responses that aren't price data. The parser recognises columns by their
+     header names, so each site's different layout works. Each day's open/high/low/close/volume/date goes into a StockBar object that is
+     saved both to CSV files (data/eod/AAPL.csv) and to a built-in H2 database. Later downloads only fetch days that aren't stored yet.
+  2. Backtesting. A strategy has three parts: a stock-picking filter, an entry rule and an exit rule. Three ready-made strategies are
+     included (moving-average crossover, RSI dip-buying, breakout), and you can add your own. --sweep tests every combination of a set of
+     parameter values and ranks the results. The results show win rate and profit, plus profit factor, drawdown and average profit per
+     trade. Every trade is also written to a CSV file.
+  3. Daily picks. daily --schedule runs every trading day at 16:30 New York time, skipping weekends and holidays. It lists each pick and
+     which strategy chose it, and writes reports/picks-DATE.csv.
+  4. Real-time alerts. It streams live prices from Finnhub (or a simulated feed for testing) and sends signals to the console, a CSV log,
+     or a Slack-style webhook. It can alert on price levels, percentage moves, volume spikes, or when any of the daily strategies would
+     buy if the market closed at the current price.
+
+  Checked against real data: I downloaded AAPL (2024 to today, 693 days) from both EODHD and Twelve Data using their public demo keys. I
+  then confirmed the CSV and database copies matched, re-ran the download to check it only adds new days, and ran a backtest and a daily
+  scan on that data.
+
+  Things to know
+  - Stooq no longer works from code. It now returns a "verify your browser" page instead of CSV. The downloader detects this and moves on
+    to the next site, and I put Stooq last in the order. Alpha Vantage's demo key no longer works either.
+  - You need free API keys for real use: EODHD or Twelve Data (their demo keys only cover a few tickers like AAPL), and Finnhub for live
+    prices. Set them as environment variables, e.g. EODHD_APIKEY, FINNHUB_APIKEY.
+  - Backtest assumptions: it only buys (no short selling), holds at most one position per stock, and puts a fixed amount into each trade.
+    Buy and sell orders fill at the next day's open, so it never uses future data. Stop-loss and take-profit orders fill during the day
+    at their price.
+  - Holidays: the market holiday list in the config covers only 2026–2027 and should be checked against the official NYSE calendar.
+
+  To try it without any keys, build with mvn package, then run java -jar target/trading-framework-1.0.0-SNAPSHOT.jar demo. It runs all
+  four parts on generated data. README.md has the full command list and examples for adding your own strategies.
