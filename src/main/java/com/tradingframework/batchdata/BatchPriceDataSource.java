@@ -28,7 +28,7 @@ public abstract class BatchPriceDataSource {
 
     public BatchPriceDataSource(AppConfig config, String sourceName) {
         this.sourceName = sourceName;
-        this.dir = Path.of(config.get("data.dir", "data")).resolve(sourceName);
+        this.dir = Path.of(config.get("data.dir", "downloaded")).resolve(sourceName);
     }
 
     public void parseEodAndSave(String data) {
